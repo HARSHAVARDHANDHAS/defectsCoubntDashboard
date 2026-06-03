@@ -47,7 +47,7 @@ const columnMappings = {
     channel2: {
         defect1: 'OR_FACE_UNCLEAR', defect2: 'OR_FACE_DAMAGED', defect3: 'FLOWERING_MARK', defect4: 'SHOE_ROLLER_MARK',
         defect5: 'OD_MARK', defect6: 'OR_FACE_MARK', defect7: 'OR_FACE_DENT', defect8: 'OR_GROOVE_DENT',
-        defect9: 'UN_EVEN_OR_RADIUS', defect10: 'CAGEFILL', defect11: 'IR_FACE_DAMAGE', defect12: 'IR_FACE_UNCLEAN',
+        defect9: 'UN_EVEN_OR_RADIUS', defect10: 'CAGEFILL', defect11: 'IR_FACE_DAMAGE', defect12: 'IR_FACE_UNCLEAR',
         defect13: 'DENT_IN_IR_FACE', defect14: 'IR_FACE_MARK', defect15: 'EXCESSIVE_BORE_RADIUS', defect16: 'BORE_RADIUS_MISSING',
         defect17: 'CAGE_CRACK', defect18: 'RUSTY_MARK', defect19: 'RIVET_HEAD_NOT_FORMED', defect20: 'IMPROPER_RIVETING',
         defect21: 'CAGE_MISSING', defect22: 'RIVET_MISSING', defect23: 'REVERSE_SEALING', defect24: 'UNPRESSED_SEAL',
