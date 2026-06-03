@@ -112,7 +112,11 @@ async function saveDataToSQL() {
             const placeholders = columns.map(() => '?').join(', ');
             
             // Map channel key to actual SQL table name matching schema.sql
-            const tableMap = { channel1: 'channel1', channel2: 'channel2', channel3: 'channel3' };
+            const tableMap = {
+              channel1: 'channel_1_hourly_logs',
+              channel2: 'channel_2_hourly_logs',
+              channel3: 'channel_3_hourly_logs'
+            };
             const tableName = tableMap[channel];
             const query = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
 
