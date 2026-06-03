@@ -88,19 +88,22 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// 4. COMMIT SNAPSHOTS DIRECTLY TO SIMPLIFIED TABLE NAMES (channel1, channel2, channel3)
+// 4. COMMIT HOURLY SNAPSHOTS TO DB
 async function saveDataToSQL() {
     console.log("⏰ Initiating hourly snapshot commit to SQL Database...");
     let connection;
     try {
         connection = await mysql.createConnection(dbConfig);
         const timestamp = new Date();
-
+        const tableMap = {
+            channel1: 'channel_1_hourly_logs',
+            channel2: 'channel_2_hourly_logs',
+            channel3: 'channel_3_hourly_logs'
+        };
         for (const channel of ['channel1', 'channel2', 'channel3']) {
             const mappings = columnMappings[channel];
             const columns = ['DATE_TIME'];
             const values = [timestamp];
-
             Object.keys(liveCounts[channel]).forEach(defectId => {
                 const dbColumnName = mappings[defectId];
                 if (dbColumnName) {
@@ -108,22 +111,12 @@ async function saveDataToSQL() {
                     values.push(liveCounts[channel][defectId]);
                 }
             });
-
             const placeholders = columns.map(() => '?').join(', ');
-            
-            // Map channel key to actual SQL table name matching schema.sql
-            const tableMap = {
-              channel1: 'channel_1_hourly_logs',
-              channel2: 'channel_2_hourly_logs',
-              channel3: 'channel_3_hourly_logs'
-            };
             const tableName = tableMap[channel];
             const query = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
-
             await connection.execute(query, values);
-            console.log(`✅ logged snapshot parameters successfully for ${channel.toUpperCase()}`);
-            
-            // Clear current working tally
+            console.log(`✅ Hourly snapshot saved for ${channel.toUpperCase()}`);
+            // Reset tally only after successful hourly commit
             Object.keys(liveCounts[channel]).forEach(key => liveCounts[channel][key] = 0);
         }
     } catch (error) {
@@ -133,8 +126,44 @@ async function saveDataToSQL() {
     }
 }
 
-// Set up interval trigger loop (Runs snapshot routine every 1 hour = 3600000 milliseconds)
-setInterval(saveDataToSQL, 20000);
+// 5. RESTORE COUNTS FROM DB ON STARTUP (survives page refreshes & server restarts)
+async function loadCountsFromDB() {
+    let connection;
+    try {
+        connection = await mysql.createConnection(dbConfig);
+        const tableMap = {
+            channel1: 'channel_1_hourly_logs',
+            channel2: 'channel_2_hourly_logs',
+            channel3: 'channel_3_hourly_logs'
+        };
+        for (const channel of ['channel1', 'channel2', 'channel3']) {
+            const tableName = tableMap[channel];
+            const mappings = columnMappings[channel];
+            const [rows] = await connection.execute(
+                `SELECT * FROM ${tableName} ORDER BY DATE_TIME DESC LIMIT 1`
+            );
+            if (rows.length > 0) {
+                const row = rows[0];
+                Object.keys(mappings).forEach(defectId => {
+                    const colName = mappings[defectId];
+                    if (row[colName] !== undefined) {
+                        liveCounts[channel][defectId] = row[colName];
+                    }
+                });
+                console.log(`📦 Restored counts for ${channel.toUpperCase()} from DB`);
+            } else {
+                console.log(`ℹ️  No existing data for ${channel.toUpperCase()}, starting fresh`);
+            }
+        }
+    } catch (err) {
+        console.error('⚠️  Could not restore counts from DB (starting fresh):', err.message);
+    } finally {
+        if (connection) await connection.end();
+    }
+}
+
+// Run hourly snapshot every 1 hour (3600000 ms)
+setInterval(saveDataToSQL, 3600000);
 
 async function testDB() {
   try {
@@ -148,7 +177,8 @@ async function testDB() {
 
 // Launch Node server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  testDB();  
+app.listen(PORT, async () => {
+  await testDB();
+  await loadCountsFromDB(); // Restore last known counts from DB on startup
   console.log(`🚀 System Online! Access Web Dashboard at: http://localhost:${PORT}`);
 });
