@@ -13,10 +13,12 @@ app.use(express.static(path.join(__dirname)));
 // 1. DATABASE CONFIGURATION
 const dbConfig = {
   host:     process.env.DB_HOST     || 'localhost',
-  port:     process.env.DB_PORT     || 3306,
+  port:     parseInt(process.env.DB_PORT) || 3306,
   user:     process.env.DB_USER     || 'root',
   password: process.env.DB_PASSWORD || 'Admin@123',
-  database: process.env.DB_NAME     || 'factory_defects_db'
+  database: process.env.DB_NAME     || 'factory_defects_db',
+  // TiDB Cloud requires SSL — enabled via DB_SSL=true env var
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: true } : false
 };
 
 // 2. LIVE IN-MEMORY TALLY COUNTS
