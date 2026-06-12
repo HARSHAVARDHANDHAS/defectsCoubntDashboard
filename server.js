@@ -319,7 +319,7 @@ async function loadCountsFromDB() {
 }
 
 // Run hourly snapshot every 1 hour (3600000 ms)
-setInterval(saveDataToSQL, 3600000);
+setInterval(saveDataToSQL, 20000);
 
 async function testDB() {
   try {
